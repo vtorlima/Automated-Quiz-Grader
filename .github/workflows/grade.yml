@@ -1,0 +1,128 @@
+#  .github/workflows/grade.yml
+#
+#    1. A push triggers the pipeline.
+#    2. The environment is prepared (Python, dependencies).
+#    3. The grading script is invoked against the submitted
+#       answers and a set of test modules.
+#    4. Results are surfaced as a rich GitHub Job Summary,
+#       visible directly on the workflow run page.
+#
+#  Adding new test modules requires NO changes to this file.
+#  Simply create a new subdirectory under tests/ with:
+#      inputs.txt
+#      expected_outputs.txt
+#  The grader automatically discovers all valid modules on every run.
+
+name: "Automated Quiz Grader"
+
+# Trigger 
+# Run on every push to main or master.
+# Also supports manual runs via the "Run workflow" button in the GitHub Actions UI (workflow_dispatch).
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  
+
+# Permissions
+# We only need read access to the repo contents.
+# No write access required — results go to GITHUB_STEP_SUMMARY,
+# which is a built-in Actions feature, not a repo file.
+permissions:
+  contents: read
+
+jobs:
+  grade:
+    name: "Grade submission"
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Step 1: Checkout 
+      # Pull the full repository so the runner has access to:
+      #   - answers.txt       
+      #   - tests/            
+      #   - scripts/grade.py  
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      # Step 2: Python setup 
+      # The grader is pure Python 3 stdlib, no pip installs needed.
+      # We still pin the version for reproducibility, which is best practice in any CI pipeline.
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Validate test structure 
+      # Before grading, do a quick check that the expected directory structure is in place. 
+      # This step fails fast and gives a clear error if the repo structure is broken,
+      # rather than a Python traceback later.
+      - name: "Validate test module structure"
+        run: |
+          echo "Checking that required files exist..."
+
+          # answers.txt must be present
+          if [ ! -f answers.txt ]; then
+            echo "❌ answers.txt not found in repo root."
+            exit 1
+          fi
+
+          # tests/ directory must exist
+          if [ ! -d tests ]; then
+            echo "❌ tests/ directory not found."
+            exit 1
+          fi
+
+          # Each subdirectory of tests/ must have both required files
+          for module_dir in tests/*/; do
+            module_name=$(basename "$module_dir")
+            if [ ! -f "${module_dir}inputs.txt" ]; then
+              echo "❌ Missing inputs.txt in module: $module_name"
+              exit 1
+            fi
+            if [ ! -f "${module_dir}expected_outputs.txt" ]; then
+              echo "❌ Missing expected_outputs.txt in module: $module_name"
+              exit 1
+            fi
+            echo "✅ Module '$module_name' looks good."
+          done
+
+          echo "Structure validation passed."
+
+      # Step 4: Run the grader 
+      # The grading script:
+      #   - Discovers test modules automatically
+      #   - Parses the student's answers.txt
+      #   - Compares submitted answers against expected outputs
+      #   - Prints results to the log
+      #   - Writes a rich Markdown table to $GITHUB_STEP_SUMMARY
+      #
+      # The script exits with code 1 if any answers are wrong,
+      # which causes this step (and the job) to be marked as failed
+      # in the GitHub UI — giving immediate visual feedback.
+      #
+      # "continue-on-error: true" here means the Summary step below
+      # will always run and show the detailed results table even when
+      # the grade is not perfect. Without this, a wrong answer would
+      # skip the summary rendering.
+      - name: "Run autograder"
+        continue-on-error: true
+        id: grader
+        run: |
+          python scripts/grade.py \
+            --answers answers.txt \
+            --tests-dir tests/
+
+      # Step 5: Final status gate 
+      # Explicitly fail the job if the grader found wrong answers.
+      # This two-step pattern (continue-on-error + explicit gate) is
+      # a common CI trick to ensure summary output is always written
+      # while still marking the overall job as failed when needed.
+      - name: "Check grade result"
+        if: steps.grader.outcome == 'failure'
+        run: |
+          echo "One or more answers were incorrect or missing."
+          echo "Check the Job Summary tab above for the full results table."
+          exit 1
