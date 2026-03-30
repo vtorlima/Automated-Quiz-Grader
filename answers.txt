@@ -1,0 +1,28 @@
+# ============================================================
+#  ARITHMETIC QUIZ. Fill in your answers after each "="
+#  Instructions:
+#    - Only edit the lines that end with "="
+#    - Write your answer right after the equals sign
+#    - Do not modify the question text itself
+#    - Whole numbers only (no decimals)
+# ============================================================
+
+# --- Addition ---
+12 + 6 =
+35 + 41 =
+105 + 250 =
+
+# --- Subtraction ---
+50 - 19 =
+200 - 130 =
+1000 - 494 =
+
+# --- Multiplication ---
+6 * 9 =
+13 * 7 =
+25 * 5 =
+
+# --- Division (integer division, round down) ---
+48 / 6 =
+100 / 4 =
+81 / 9 =
