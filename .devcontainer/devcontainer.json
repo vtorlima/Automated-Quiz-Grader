@@ -1,0 +1,27 @@
+{
+  // Codespaces / Dev Container configuration
+  // This file tells GitHub Codespaces (and VS Code Dev Containers)
+  // what environment to spin up when someone opens this repo.
+  //
+  // For this project a minimal Python image is all we need
+  // the grader has zero external dependencies beyond the stdlib.
+  "name": "Arithmetic CI",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  // Recommended VS Code extensions pre-installed in the Codespace
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",        
+        "GitHub.vscode-pull-request-github"  
+      ],
+      "settings": {
+        "editor.rulers": [80],
+        "files.trimTrailingWhitespace": true
+      }
+    }
+  },
+
+  // Run the grader locally after the container starts so the student can see their current score before they even make changes.
+  "postStartCommand": "python scripts/grade.py --answers answers.txt --tests-dir tests/ || true"
+}
