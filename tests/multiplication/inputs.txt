@@ -1,0 +1,5 @@
+# Test cases for the multiplication module
+# Format: left_operand right_operand
+6 9
+13 7
+25 5

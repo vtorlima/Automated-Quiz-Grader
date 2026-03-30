@@ -1,0 +1,5 @@
+# Test cases for the addition module
+# Format: left_operand right_operand
+12 6
+35 41
+105 250

@@ -1,0 +1,5 @@
+# Test cases for the subtraction module
+# Format: left_operand right_operand
+50 19
+200 130
+1000 494
